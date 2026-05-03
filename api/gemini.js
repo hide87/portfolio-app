@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
 res.setHeader(‘Access-Control-Allow-Origin’, ‘*’)
 if (req.method !== ‘POST’) return res.status(405).end()
 const prompt = req.body && req.body.prompt

@@ -1,27 +1,24 @@
-export default async function handler(req) {
-const { searchParams } = new URL(req.url)
-const symbols = searchParams.get(‘symbols’) || ‘’
+module.exports = async (req, res) => {
+res.setHeader(‘Access-Control-Allow-Origin’, ‘*’)
+const symbols = req.query.symbols || ‘’
 const KEY = process.env.FINNHUB_API_KEY
 const tickers = symbols.split(’,’).filter(Boolean)
 const result = {}
 await Promise.all(tickers.map(async (ticker) => {
-const isKorean = ticker.includes(’.KS’) || ticker.includes(’.KQ’)
-if (isKorean) {
+if (ticker.includes(’.KS’) || ticker.includes(’.KQ’)) {
 try {
-const r = await fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=1d&interval=1d`, { headers: { ‘User-Agent’: ‘Mozilla/5.0’ } })
-const data = await r.json()
-const meta = data?.chart?.result?.[0]?.meta
-if (meta?.regularMarketPrice) {
-result[ticker] = { price: meta.regularMarketPrice, changePct: meta.previousClose ? (meta.regularMarketPrice - meta.previousClose) / meta.previousClose * 100 : 0, change: meta.regularMarketPrice - (meta.previousClose || meta.regularMarketPrice), prevClose: meta.previousClose, name: ticker }
-}
-} catch {}
-return
-}
+const r = await fetch(‘https://query2.finance.yahoo.com/v8/finance/chart/’ + encodeURIComponent(ticker) + ‘?range=1d&interval=1d’, { headers: { ‘User-Agent’: ‘Mozilla/5.0’ } })
+const d = await r.json()
+const m = d && d.chart && d.chart.result && d.chart.result[0] && d.chart.result[0].meta
+if (m && m.regularMarketPrice) result[ticker] = { price: m.regularMarketPrice, changePct: m.previousClose ? (m.regularMarketPrice - m.previousClose) / m.previousClose * 100 : 0, change: m.regularMarketPrice - (m.previousClose || m.regularMarketPrice), prevClose: m.previousClose, name: ticker }
+} catch(e) {}
+} else {
 try {
-const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${KEY}`)
-const data = await r.json()
-if (data.c) result[ticker] = { price: data.c, change: data.d, changePct: data.dp, prevClose: data.pc, name: ticker }
-} catch {}
+const r = await fetch(‘https://finnhub.io/api/v1/quote?symbol=’ + ticker + ‘&token=’ + KEY)
+const d = await r.json()
+if (d.c) result[ticker] = { price: d.c, change: d.d, changePct: d.dp, prevClose: d.pc, name: ticker }
+} catch(e) {}
+}
 }))
-return new Response(JSON.stringify(result), { headers: { ‘Content-Type’: ‘application/json’, ‘Access-Control-Allow-Origin’: ‘*’ } })
+res.json(result)
 }

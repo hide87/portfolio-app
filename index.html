@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -142,138 +143,156 @@ textarea:focus{border-color:var(--accent)}
         </button>
       </div>
 
-      <!-- 수익 카드 -->
-      <div class="card" style="border-color:rgba(124,106,247,.25);margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div class="label">총 평가손익</div>
-            <div id="total-gain" class="mono" style="font-size:22px;font-weight:700;margin-top:2px">—</div>
-          </div>
-          <div style="text-align:right">
-            <div class="label">수익률</div>
-            <div id="total-pct" class="mono" style="font-size:22px;font-weight:700;margin-top:2px">—</div>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-          <div>
-            <div class="label">오늘 손익</div>
-            <div id="today-gain" class="mono" style="font-size:14px;font-weight:600">—</div>
-          </div>
-          <div style="text-align:right">
-            <div class="label">USD/KRW</div>
-            <div id="fx-rate" class="mono" style="font-size:14px;font-weight:600;color:var(--gold)">—</div>
-          </div>
-        </div>
+```
+  <!-- 수익 카드 -->
+  <div class="card" style="border-color:rgba(124,106,247,.25);margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="label">총 평가손익</div>
+        <div id="total-gain" class="mono" style="font-size:22px;font-weight:700;margin-top:2px">—</div>
       </div>
-
-      <!-- 환율 영향 -->
-      <div class="fx-box">
-        <div class="label">환율 1원 변동 시 자산 영향</div>
-        <div id="fx-impact" class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">—</div>
+      <div style="text-align:right">
+        <div class="label">수익률</div>
+        <div id="total-pct" class="mono" style="font-size:22px;font-weight:700;margin-top:2px">—</div>
       </div>
-
-      <!-- 계좌 카드 -->
-      <div class="label" style="margin-bottom:8px">계좌별 현황</div>
-      <div id="account-cards"></div>
-
-      <!-- 히트맵 -->
-      <div class="label" style="margin-bottom:8px;margin-top:4px">테마별 수익률</div>
-      <div class="heatmap" id="heatmap"></div>
-
-      <div id="last-updated" class="label" style="text-align:center;padding-bottom:8px"></div>
     </div>
-
-    <!-- PORTFOLIO -->
-    <div class="section" id="sec-portfolio">
-      <h2 style="margin-bottom:12px;padding-top:12px">포트폴리오</h2>
-      <div class="chip-row" id="acc-chips"></div>
-      <div id="pie-wrap" style="display:none" class="card">
-        <div class="label" style="margin-bottom:10px">자산 배분</div>
-        <div class="pie-wrap">
-          <canvas id="pie-chart" width="120" height="120" style="flex-shrink:0"></canvas>
-          <div class="legend" id="pie-legend"></div>
-        </div>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div>
+        <div class="label">오늘 손익</div>
+        <div id="today-gain" class="mono" style="font-size:14px;font-weight:600">—</div>
       </div>
-      <div id="acc-summary"></div>
-      <div id="holdings-list"></div>
-    </div>
-
-    <!-- CHART -->
-    <div class="section" id="sec-chart">
-      <h2 style="margin-bottom:12px;padding-top:12px">차트</h2>
-      <div class="search-box">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input id="chart-search" placeholder="종목 검색 (NVDA, QQQ...)" oninput="onChartSearch(this.value)" onblur="setTimeout(()=>document.getElementById('suggestions').innerHTML='',200)">
+      <div style="text-align:right">
+        <div class="label">USD/KRW</div>
+        <div id="fx-rate" class="mono" style="font-size:14px;font-weight:600;color:var(--gold)">—</div>
       </div>
-      <div id="suggestions"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div id="chart-symbol" style="font-weight:700;font-size:15px">NVDA</div>
-        <div class="range-row" id="range-row">
-          <button class="range-btn" onclick="setRange('5d','60m',this)">1주</button>
-          <button class="range-btn" onclick="setRange('1mo','1d',this)">1달</button>
-          <button class="range-btn active" onclick="setRange('3mo','1d',this)">3달</button>
-          <button class="range-btn" onclick="setRange('6mo','1d',this)">6달</button>
-          <button class="range-btn" onclick="setRange('1y','1wk',this)">1년</button>
-        </div>
-      </div>
-      <div class="ind-chips">
-        <div class="ind-chip on" onclick="toggleInd('MA',this)">MA</div>
-        <div class="ind-chip" onclick="toggleInd('BB',this)">볼린저</div>
-        <div class="ind-chip" onclick="toggleInd('RSI',this)">RSI</div>
-        <div class="ind-chip" onclick="toggleInd('ICHI',this)">일목</div>
-      </div>
-      <div class="chart-wrap" id="chart-container" style="height:320px"></div>
-      <div id="rsi-section" style="display:none" class="card">
-        <div class="label">RSI (14)</div>
-        <div class="rsi-wrap">
-          <div class="rsi-track"><div class="rsi-fill" id="rsi-fill"></div></div>
-          <div style="display:flex;justify-content:space-between">
-            <span class="label">과매도 30</span>
-            <span id="rsi-val" class="mono" style="font-size:14px;font-weight:700"></span>
-            <span class="label">과매수 70</span>
-          </div>
-        </div>
-      </div>
-      <div id="ma-legend" style="display:flex;gap:12px;font-size:11px;margin-top:6px"></div>
-    </div>
-
-    <!-- EARNINGS -->
-    <div class="section" id="sec-earnings">
-      <h2 style="margin-bottom:4px;padding-top:12px">어닝 트래커</h2>
-      <p class="label" style="margin-bottom:12px">탭하면 상세 정보 로드</p>
-      <div class="chip-row" id="earn-chips"></div>
-      <div id="earnings-list"></div>
-    </div>
-
-    <!-- AI -->
-    <div class="section" id="sec-ai">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-top:12px">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        <h2 style="margin-bottom:0">AI 분석</h2>
-        <span class="label" style="margin-left:auto">Gemini 2.0 Flash</span>
-      </div>
-      <button class="ai-btn" id="ai-btn-portfolio" onclick="runAI('portfolio',this)">
-        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></div>
-        <div><div style="font-size:13px;font-weight:700">포트폴리오 종합 분석</div><div class="label">전체 리스크·기회 분석</div></div>
-      </button>
-      <button class="ai-btn" id="ai-btn-sector" onclick="runAI('sector',this)">
-        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <div><div style="font-size:13px;font-weight:700">섹터 분석</div><div class="label">AI인프라·반도체·방산 테마 전망</div></div>
-      </button>
-      <button class="ai-btn" id="ai-btn-fx" onclick="runAI('fx',this)">
-        <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
-        <div><div style="font-size:13px;font-weight:700">환율 영향 분석</div><div class="label">USD/KRW 변동 시나리오</div></div>
-      </button>
-      <div class="card" style="margin-top:4px">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">직접 질문하기</div>
-        <textarea id="custom-q" rows="3" placeholder="예: SHLD를 지금 더 매수해야 할까요?"></textarea>
-        <button class="btn-primary" onclick="runCustomAI()" id="custom-btn">분석 요청</button>
-      </div>
-      <div id="ai-result"></div>
     </div>
   </div>
 
+  <!-- 환율 영향 -->
+  <div class="fx-box">
+    <div class="label">환율 1원 변동 시 자산 영향</div>
+    <div id="fx-impact" class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">—</div>
+  </div>
+
+  <!-- 계좌 카드 -->
+  <div class="label" style="margin-bottom:8px">계좌별 현황</div>
+  <div id="account-cards"></div>
+
+  <!-- 히트맵 -->
+  <div class="label" style="margin-bottom:8px;margin-top:4px">테마별 수익률</div>
+  <div class="heatmap" id="heatmap"></div>
+
+  <div id="last-updated" class="label" style="text-align:center;padding-bottom:8px"></div>
+</div>
+
+<!-- PORTFOLIO -->
+<div class="section" id="sec-portfolio">
+  <h2 style="margin-bottom:12px;padding-top:12px">포트폴리오</h2>
+  <div class="chip-row" id="acc-chips"></div>
+  <div id="pie-wrap" style="display:none" class="card">
+    <div class="label" style="margin-bottom:10px">자산 배분</div>
+    <div class="pie-wrap">
+      <canvas id="pie-chart" width="120" height="120" style="flex-shrink:0"></canvas>
+      <div class="legend" id="pie-legend"></div>
+    </div>
+  </div>
+  <div id="acc-summary"></div>
+  <div id="holdings-list"></div>
+</div>
+
+<!-- CHART -->
+<div class="section" id="sec-chart">
+  <h2 style="margin-bottom:12px;padding-top:12px">차트</h2>
+  <div class="search-box">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="chart-search" placeholder="종목 검색 (NVDA, QQQ...)" oninput="onChartSearch(this.value)" onblur="setTimeout(()=>document.getElementById('suggestions').innerHTML='',200)">
+  </div>
+  <div id="suggestions"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div id="chart-symbol" style="font-weight:700;font-size:15px">NVDA</div>
+    <div class="range-row" id="range-row">
+      <button class="range-btn" onclick="setRange('5d','60m',this)">1주</button>
+      <button class="range-btn" onclick="setRange('1mo','1d',this)">1달</button>
+      <button class="range-btn active" onclick="setRange('3mo','1d',this)">3달</button>
+      <button class="range-btn" onclick="setRange('6mo','1d',this)">6달</button>
+      <button class="range-btn" onclick="setRange('1y','1wk',this)">1년</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+    <span class="label">봉:</span>
+    <button class="range-btn active" id="candle-btn-day" onclick="setCandleType('1d',this)">일봉</button>
+    <button class="range-btn" id="candle-btn-week" onclick="setCandleType('1wk',this)">주봉</button>
+    <button class="range-btn" id="candle-btn-hour" onclick="setCandleType('60m',this)">시간봉</button>
+    <span id="candle-info" class="label" style="margin-left:auto;color:var(--accent)">일봉 기준</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+    <span class="label">봉 단위:</span>
+    <button class="range-btn active" id="candle-btn-day" onclick="setCandleType('1d',this)">일봉</button>
+    <button class="range-btn" id="candle-btn-week" onclick="setCandleType('1wk',this)">주봉</button>
+    <button class="range-btn" id="candle-btn-hour" onclick="setCandleType('60m',this)">시간봉</button>
+    <span id="candle-info" class="label" style="margin-left:auto;color:var(--accent)"></span>
+  </div>
+  <div class="ind-chips">
+    <div class="ind-chip on" onclick="toggleInd('MA',this)">MA</div>
+    <div class="ind-chip" onclick="toggleInd('BB',this)">볼린저</div>
+    <div class="ind-chip" onclick="toggleInd('RSI',this)">RSI</div>
+    <div class="ind-chip" onclick="toggleInd('ICHI',this)">일목</div>
+  </div>
+  <div class="chart-wrap" id="chart-container" style="height:320px"></div>
+  <div id="rsi-section" style="display:none" class="card">
+    <div class="label">RSI (14)</div>
+    <div class="rsi-wrap">
+      <div class="rsi-track"><div class="rsi-fill" id="rsi-fill"></div></div>
+      <div style="display:flex;justify-content:space-between">
+        <span class="label">과매도 30</span>
+        <span id="rsi-val" class="mono" style="font-size:14px;font-weight:700"></span>
+        <span class="label">과매수 70</span>
+      </div>
+    </div>
+  </div>
+  <div id="ma-legend" style="display:flex;gap:12px;font-size:11px;margin-top:6px"></div>
+</div>
+
+<!-- EARNINGS -->
+<div class="section" id="sec-earnings">
+  <h2 style="margin-bottom:4px;padding-top:12px">어닝 트래커</h2>
+  <p class="label" style="margin-bottom:12px">탭하면 상세 정보 로드</p>
+  <div class="chip-row" id="earn-chips"></div>
+  <div id="earnings-list"></div>
+</div>
+
+<!-- AI -->
+<div class="section" id="sec-ai">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-top:12px">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    <h2 style="margin-bottom:0">AI 분석</h2>
+    <span class="label" style="margin-left:auto">Gemini 2.0 Flash</span>
+  </div>
+  <button class="ai-btn" id="ai-btn-portfolio" onclick="runAI('portfolio',this)">
+    <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></div>
+    <div><div style="font-size:13px;font-weight:700">포트폴리오 종합 분석</div><div class="label">전체 리스크·기회 분석</div></div>
+  </button>
+  <button class="ai-btn" id="ai-btn-sector" onclick="runAI('sector',this)">
+    <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+    <div><div style="font-size:13px;font-weight:700">섹터 분석</div><div class="label">AI인프라·반도체·방산 테마 전망</div></div>
+  </button>
+  <button class="ai-btn" id="ai-btn-fx" onclick="runAI('fx',this)">
+    <div class="ai-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+    <div><div style="font-size:13px;font-weight:700">환율 영향 분석</div><div class="label">USD/KRW 변동 시나리오</div></div>
+  </button>
+  <div class="card" style="margin-top:4px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">직접 질문하기</div>
+    <textarea id="custom-q" rows="3" placeholder="예: SHLD를 지금 더 매수해야 할까요?"></textarea>
+    <button class="btn-primary" onclick="runCustomAI()" id="custom-btn">분석 요청</button>
+  </div>
+  <div id="ai-result"></div>
+</div>
+```
+
+  </div>
+
   <!-- TAB BAR -->
+
   <nav class="tabbar">
     <button class="tab-btn active" onclick="showTab('home',this)">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -716,10 +735,38 @@ function renderChart(candles) {
 }
 
 function setRange(r, iv, btn) {
-  chartRange=r; chartInterval=iv
-  document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'))
+  chartRange=r
+  // 봉 단위는 현재 선택된 것 유지 (단, 1주 선택시 강제 시간봉)
+  if(r==='5d') { chartInterval='60m'; setActiveCandleBtn('candle-btn-hour') }
+  else if(r==='1y') { chartInterval='1wk'; setActiveCandleBtn('candle-btn-week') }
+  else { chartInterval=chartInterval==='1wk'?'1wk':'1d'; setActiveCandleBtn(chartInterval==='1wk'?'candle-btn-week':'candle-btn-day') }
+  document.querySelectorAll('.range-row .range-btn').forEach(b=>b.classList.remove('active'))
   btn.classList.add('active')
+  updateCandleInfo()
   loadChartData()
+}
+
+function setCandleType(iv, btn) {
+  chartInterval=iv
+  setActiveCandleBtn(btn.id)
+  updateCandleInfo()
+  loadChartData()
+}
+
+function setActiveCandleBtn(id) {
+  ['candle-btn-day','candle-btn-week','candle-btn-hour'].forEach(i=>{
+    const el=document.getElementById(i)
+    if(el) el.classList.remove('active')
+  })
+  const el=document.getElementById(id)
+  if(el) el.classList.add('active')
+}
+
+function updateCandleInfo() {
+  const el=document.getElementById('candle-info')
+  if(!el) return
+  const map={'1d':'일봉 기준','1wk':'주봉 기준','60m':'1시간봉 기준','30m':'30분봉'}
+  el.textContent=map[chartInterval]||''
 }
 
 function toggleInd(ind, el) {
@@ -788,7 +835,7 @@ async function toggleEarn(ticker, headerEl) {
   if(body.dataset.loaded) return
   body.innerHTML = '<div class="spin" style="margin:16px auto"></div>'
   try {
-    const res = await fetch('/api/earnings?ticker='+ticker)
+    const res = await fetch('/api/earnings?ticker='+encodeURIComponent(ticker))
     const d = await res.json()
     body.dataset.loaded='1'
     let html=''
@@ -878,8 +925,8 @@ async function callGemini(prompt, btn) {
         <h3>✦ AI 분석 결과</h3>
         <div class="md"><p>${html}</p></div>
       </div>`
-  } catch {
-    document.getElementById('ai-result').innerHTML = '<p class="label" style="text-align:center;padding:16px">오류가 발생했습니다</p>'
+  } catch(e) {
+    document.getElementById('ai-result').innerHTML = `<p class="label" style="text-align:center;padding:16px">오류: ${e.message}</p>`
   }
   if(btn){ btn.disabled=false; btn.classList.remove('running') }
 }
@@ -894,5 +941,6 @@ async function callGemini(prompt, btn) {
   setInterval(refreshAll, 60000)
 })()
 </script>
+
 </body>
 </html>

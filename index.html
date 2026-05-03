@@ -412,14 +412,16 @@ let earnCat = '전체'
 const fmtKRW = n => {
   if(n==null) return '—'
   const a = Math.abs(n)
-  if(a>=100000000) return (n/100000000).toFixed(1)+'억'
-  if(a>=10000) return (n/10000).toFixed(0)+'만'
-  return n.toLocaleString('ko-KR')
+  if(a>=100000000) return (n/100000000).toFixed(2)+'억'
+  if(a>=10000000) return (n/10000000).toFixed(1)+'천만'
+  if(a>=10000) return Math.round(n).toLocaleString('ko-KR')
+  return Math.round(n).toLocaleString('ko-KR')
 }
 const fmtBig = n => {
   if(n==null) return '—'
   if(Math.abs(n)>=100000000) return (n/100000000).toFixed(2)+'억원'
-  return n.toLocaleString('ko-KR')+'원'
+  if(Math.abs(n)>=10000000) return (n/10000000).toFixed(1)+'천만원'
+  return Math.round(n).toLocaleString('ko-KR')+'원'
 }
 const fmtPct = (n,d=2) => n==null ? '—' : (n>=0?'+':'')+n.toFixed(d)+'%'
 const colorClass = n => n>0?'up':n<0?'down':'muted'
@@ -661,11 +663,9 @@ async function loadChartData() {
   const container = document.getElementById('chart-container')
   container.innerHTML = '<div class="spin"></div>'
   try {
-    const url = 'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(chartSymbol)+'?range='+chartRange+'&interval='+chartInterval
-    const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(url)
-    const res = await fetch(proxy)
-    const wrapper = await res.json()
-    const data = JSON.parse(wrapper.contents)
+    const chartUrl = 'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(chartSymbol)+'?range='+chartRange+'&interval='+chartInterval
+    const res = await fetch('https://corsproxy.io/?'+encodeURIComponent(chartUrl))
+    const data = await res.json()
     const chart = data&&data.chart&&data.chart.result&&data.chart.result[0]
     if(!chart) throw new Error('No data')
     const ts = chart.timestamp||[]
@@ -873,11 +873,14 @@ async function toggleEarn(ticker, headerEl) {
   body.innerHTML = '<div class="spin" style="margin:16px auto"></div>'
   try {
     const earnUrl = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary/'+encodeURIComponent(ticker)+'?modules=earnings%2CearningsHistory%2CcalendarEvents'
-    const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(earnUrl)
-    const rawRes = await fetch(proxy)
-    const rawWrapper = await rawRes.json()
-    const res = {json: async()=>JSON.parse(rawWrapper.contents)}
-    const d = await res.json()
+    const r = await fetch('https://corsproxy.io/?'+encodeURIComponent(earnUrl), {headers:{'User-Agent':'Mozilla/5.0'}})
+    const raw = await r.json()
+    const s = raw&&raw.quoteSummary&&raw.quoteSummary.result&&raw.quoteSummary.result[0]
+    const d = {
+      earningsDate: s&&s.calendarEvents&&s.calendarEvents.earnings&&s.calendarEvents.earnings.earningsDate&&s.calendarEvents.earnings.earningsDate[0]&&s.calendarEvents.earnings.earningsDate[0].fmt||null,
+      earningsHistory: (s&&s.earningsHistory&&s.earningsHistory.history||[]).map(h=>({date:h.quarter&&h.quarter.fmt,epsActual:h.epsActual&&h.epsActual.raw,epsEstimate:h.epsEstimate&&h.epsEstimate.raw,surprisePct:h.surprisePercent&&h.surprisePercent.raw})),
+      quarterlyEPS: (s&&s.earnings&&s.earnings.financialsChart&&s.earnings.financialsChart.quarterly||[]).map(q=>({date:q.date,actual:q.actual&&q.actual.raw,estimate:q.estimate&&q.estimate.raw}))
+    }
     body.dataset.loaded='1'
     let html=''
     if(d.earningsDate) html+=`<div class="next-date"><span class="label">다음 어닝 예정</span><span style="font-size:13px;font-weight:700;color:var(--accent)">${d.earningsDate}</span></div>`

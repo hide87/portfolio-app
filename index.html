@@ -663,14 +663,36 @@ async function loadChartData() {
   const container = document.getElementById('chart-container')
   container.innerHTML = '<div class="spin"></div>'
   try {
-    const chartUrl = 'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(chartSymbol)+'?range='+chartRange+'&interval='+chartInterval
-    const res = await fetch('https://corsproxy.io/?'+encodeURIComponent(chartUrl))
-    const data = await res.json()
-    const chart = data&&data.chart&&data.chart.result&&data.chart.result[0]
-    if(!chart) throw new Error('No data')
-    const ts = chart.timestamp||[]
-    const q = (chart.indicators&&chart.indicators.quote&&chart.indicators.quote[0])||{}
-    const candles = ts.map((t,i)=>({time:t,open:q.open&&q.open[i],high:q.high&&q.high[i],low:q.low&&q.low[i],close:q.close&&q.close[i]})).filter(c=>c.open&&c.close)
+    // Finnhub 캔들 API (한국 ETF는 Yahoo 프록시 사용)
+    const isKorean = chartSymbol.includes('.KS')||chartSymbol.includes('.KQ')
+    const now = Math.floor(Date.now()/1000)
+    const rangeMap = {'5d':7,'1mo':35,'3mo':100,'6mo':200,'1y':370}
+    const days = rangeMap[chartRange]||100
+    const from = now - days*24*3600
+
+    let candles = []
+    if(!isKorean) {
+      // Finnhub 캔들
+      const resMap = {'5d':'60','1mo':'D','3mo':'D','6mo':'D','1y':'W'}
+      const resolution = resMap[chartRange]||'D'
+      const r = await fetch('https://finnhub.io/api/v1/stock/candle?symbol='+chartSymbol+'&resolution='+resolution+'&from='+from+'&to='+now+'&token='+FINNHUB_KEY)
+      const d = await r.json()
+      if(d&&d.s==='ok'&&d.t) {
+        candles = d.t.map((t,i)=>({time:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i]}))
+      }
+    } else {
+      // 한국 ETF - allorigins
+      const yahooUrl = 'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(chartSymbol)+'?range='+chartRange+'&interval='+chartInterval
+      const r = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yahooUrl))
+      const w = await r.json()
+      const data = JSON.parse(w.contents)
+      const chart = data&&data.chart&&data.chart.result&&data.chart.result[0]
+      if(chart) {
+        const ts = chart.timestamp||[]
+        const q = (chart.indicators&&chart.indicators.quote&&chart.indicators.quote[0])||{}
+        candles = ts.map((t,i)=>({time:t,open:q.open&&q.open[i],high:q.high&&q.high[i],low:q.low&&q.low[i],close:q.close&&q.close[i]})).filter(c=>c.open&&c.close)
+      }
+    }
     if(candles.length) renderChart(candles)
     else throw new Error('No candles')
   } catch(e){ container.innerHTML = '<p class="label" style="text-align:center;padding:40px">데이터 로드 실패</p>' }
@@ -872,14 +894,28 @@ async function toggleEarn(ticker, headerEl) {
   if(body.dataset.loaded) return
   body.innerHTML = '<div class="spin" style="margin:16px auto"></div>'
   try {
-    const earnUrl = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary/'+encodeURIComponent(ticker)+'?modules=earnings%2CearningsHistory%2CcalendarEvents'
-    const r = await fetch('https://corsproxy.io/?'+encodeURIComponent(earnUrl), {headers:{'User-Agent':'Mozilla/5.0'}})
-    const raw = await r.json()
-    const s = raw&&raw.quoteSummary&&raw.quoteSummary.result&&raw.quoteSummary.result[0]
-    const d = {
-      earningsDate: s&&s.calendarEvents&&s.calendarEvents.earnings&&s.calendarEvents.earnings.earningsDate&&s.calendarEvents.earnings.earningsDate[0]&&s.calendarEvents.earnings.earningsDate[0].fmt||null,
-      earningsHistory: (s&&s.earningsHistory&&s.earningsHistory.history||[]).map(h=>({date:h.quarter&&h.quarter.fmt,epsActual:h.epsActual&&h.epsActual.raw,epsEstimate:h.epsEstimate&&h.epsEstimate.raw,surprisePct:h.surprisePercent&&h.surprisePercent.raw})),
-      quarterlyEPS: (s&&s.earnings&&s.earnings.financialsChart&&s.earnings.financialsChart.quarterly||[]).map(q=>({date:q.date,actual:q.actual&&q.actual.raw,estimate:q.estimate&&q.estimate.raw}))
+    // Finnhub 어닝 API
+    const isKrEtf = ticker.includes('.KS')||ticker.includes('.KQ')
+    const fhTicker = isKrEtf ? null : ticker
+    const d = { earningsDate: null, earningsHistory: [], quarterlyEPS: [] }
+    if(fhTicker) {
+      const [calR, epsR] = await Promise.all([
+        fetch('https://finnhub.io/api/v1/calendar/earnings?symbol='+fhTicker+'&token='+FINNHUB_KEY),
+        fetch('https://finnhub.io/api/v1/stock/earnings?symbol='+fhTicker+'&token='+FINNHUB_KEY)
+      ])
+      const calData = await calR.json()
+      const epsData = await epsR.json()
+      // 다음 어닝 날짜
+      const upcoming = calData&&calData.earningsCalendar&&calData.earningsCalendar.filter(e=>new Date(e.date)>=new Date())
+      if(upcoming&&upcoming.length) d.earningsDate = upcoming[0].date
+      // EPS 히스토리
+      if(Array.isArray(epsData)) {
+        d.earningsHistory = epsData.slice(0,4).map(e=>({
+          date: e.period, epsActual: e.actual, epsEstimate: e.estimate,
+          surprisePct: e.estimate&&e.actual!=null?(e.actual-e.estimate)/Math.abs(e.estimate)*100:null
+        }))
+        d.quarterlyEPS = epsData.slice(0,6).map(e=>({date:e.period,actual:e.actual,estimate:e.estimate}))
+      }
     }
     body.dataset.loaded='1'
     let html=''
@@ -972,7 +1008,7 @@ async function callGemini(prompt, btn) {
         <div class="md"><p>${html}</p></div>
       </div>`
   } catch(e) {
-    document.getElementById('ai-result').innerHTML = `<p class="label" style="text-align:center;padding:16px">오류: ${e.message}</p>`
+    document.getElementById('ai-result').innerHTML = '<p class="label" style="text-align:center;padding:16px">오류: '+e.message+'</p>'
   }
   if(btn){ btn.disabled=false; btn.classList.remove('running') }
 }

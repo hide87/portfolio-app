@@ -1,7 +1,6 @@
-export default async function handler(req) {
-  const {searchParams} = new URL(req.url, 'https://example.com')
-  const ticker = searchParams.get('ticker')
-  if(!ticker) return new Response(JSON.stringify({error:'No ticker'}),{status:400,headers:{'Content-Type':'application/json'}})
+export default async function handler(req, res) {
+  const ticker = req.query.ticker
+  if(!ticker) return res.status(400).json({error:'No ticker'})
   const KEY = process.env.FINNHUB_API_KEY
   try {
     const [calR, epsR] = await Promise.all([
@@ -17,8 +16,9 @@ export default async function handler(req) {
       surprisePct:e.estimate&&e.actual!=null?(e.actual-e.estimate)/Math.abs(e.estimate)*100:null
     })) : []
     const quarterlyEPS = Array.isArray(epsData) ? epsData.slice(0,6).map(e=>({date:e.period,actual:e.actual,estimate:e.estimate})) : []
-    return new Response(JSON.stringify({earningsDate,earningsHistory,quarterlyEPS}),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}})
+    res.setHeader('Access-Control-Allow-Origin','*')
+    res.json({earningsDate,earningsHistory,quarterlyEPS})
   } catch(e) {
-    return new Response(JSON.stringify({error:e.message}),{status:500,headers:{'Content-Type':'application/json'}})
+    res.status(500).json({error:e.message})
   }
 }

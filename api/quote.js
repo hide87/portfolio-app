@@ -1,6 +1,6 @@
 export default async function handler(req) {
-  const url = new URL(req.url)
-  const symbols = url.searchParams.get('symbols') || ''
+  const {searchParams} = new URL(req.url, 'https://example.com')
+  const symbols = searchParams.get('symbols') || ''
   const KEY = process.env.FINNHUB_API_KEY
   const tickers = symbols.split(',').filter(Boolean)
   const result = {}

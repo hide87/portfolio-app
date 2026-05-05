@@ -225,18 +225,17 @@ textarea:focus{border-color:var(--accent)}
     <button class="range-btn" id="candle-btn-hour" onclick="setCandleType('60m',this)">시간봉</button>
     <span id="candle-info" class="label" style="margin-left:auto;color:var(--accent)">일봉 기준</span>
   </div>
-  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-    <span class="label">봉 단위:</span>
-    <button class="range-btn active" id="candle-btn-day" onclick="setCandleType('1d',this)">일봉</button>
-    <button class="range-btn" id="candle-btn-week" onclick="setCandleType('1wk',this)">주봉</button>
-    <button class="range-btn" id="candle-btn-hour" onclick="setCandleType('60m',this)">시간봉</button>
-    <span id="candle-info" class="label" style="margin-left:auto;color:var(--accent)"></span>
-  </div>
   <div class="ind-chips">
-    <div class="ind-chip on" onclick="toggleInd('MA',this)">MA</div>
+    <div class="ind-chip on" onclick="toggleInd('MA',this)" id="ind-ma">MA</div>
     <div class="ind-chip" onclick="toggleInd('BB',this)">볼린저</div>
     <div class="ind-chip" onclick="toggleInd('RSI',this)">RSI</div>
     <div class="ind-chip" onclick="toggleInd('ICHI',this)">일목</div>
+  </div>
+  <div id="ma-toggles" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+    <button class="range-btn active" id="ma-btn-20" onclick="toggleMA(20,this)"><span style="width:10px;height:2px;background:#7c6af7;display:inline-block;margin-right:4px;vertical-align:middle"></span>20</button>
+    <button class="range-btn active" id="ma-btn-60" onclick="toggleMA(60,this)"><span style="width:10px;height:2px;background:#fbbf24;display:inline-block;margin-right:4px;vertical-align:middle"></span>60</button>
+    <button class="range-btn" id="ma-btn-120" onclick="toggleMA(120,this)"><span style="width:10px;height:2px;background:#34d399;display:inline-block;margin-right:4px;vertical-align:middle"></span>120</button>
+    <button class="range-btn" id="ma-btn-200" onclick="toggleMA(200,this)"><span style="width:10px;height:2px;background:#f87171;display:inline-block;margin-right:4px;vertical-align:middle"></span>200</button>
   </div>
   <div class="chart-wrap" id="chart-container" style="height:320px"></div>
   <div id="rsi-section" style="display:none" class="card">
@@ -689,20 +688,26 @@ function renderChart(candles) {
   cs.setData(candles)
   candleSeries = cs
 
-  // MA
+  // MA - 토글 가능한 20/60/120/200
+  const maColors = {20:'#7c6af7', 60:'#fbbf24', 120:'#34d399', 200:'#f87171'}
   if(activeInds.includes('MA')) {
-    const ma = (p) => candles.map((c,i)=>{
+    const calcMA = (p) => candles.map((c,i)=>{
       if(i<p-1) return null
       return {time:c.time, value:candles.slice(i-p+1,i+1).reduce((s,x)=>s+x.close,0)/p}
     }).filter(Boolean)
-    const ma20 = chart.addLineSeries({color:'#7c6af7',lineWidth:1.5,priceLineVisible:false,lastValueVisible:false})
-    ma20.setData(ma(20))
-    const ma60 = chart.addLineSeries({color:'#fbbf24',lineWidth:1.5,priceLineVisible:false,lastValueVisible:false})
-    ma60.setData(ma(60))
-    document.getElementById('ma-legend').innerHTML = `
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#7c6af7;display:inline-block"></span><span class="label">MA20</span></span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#fbbf24;display:inline-block"></span><span class="label">MA60</span></span>`
-  } else { document.getElementById('ma-legend').innerHTML='' }
+    ;[20,60,120,200].forEach(p => {
+      const btn = document.getElementById('ma-btn-'+p)
+      if(btn && btn.classList.contains('active')) {
+        const s = chart.addLineSeries({color:maColors[p],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false})
+        s.setData(calcMA(p))
+      }
+    })
+    const maToggles = document.getElementById('ma-toggles')
+    if(maToggles) maToggles.style.display='flex'
+  } else {
+    const maToggles = document.getElementById('ma-toggles')
+    if(maToggles) maToggles.style.display='none'
+  }
 
   // 볼린저
   if(activeInds.includes('BB')) {
@@ -757,6 +762,11 @@ function renderChart(candles) {
 
   chart.timeScale().fitContent()
   new ResizeObserver(()=>{ if(container) chart.applyOptions({width:container.clientWidth}) }).observe(container)
+}
+
+function toggleMA(period, btn) {
+  btn.classList.toggle('active')
+  loadChartData()
 }
 
 function setRange(r, iv, btn) {

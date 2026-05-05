@@ -6,4 +6,6 @@ export default async function handler(req) {
     if(d?.quote?.KRW) return new Response(JSON.stringify({usdkrw:d.quote.KRW,changePct:0}),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}})
     throw new Error('no rate')
   } catch(e) {
-    return new Response(JSON.stringify({usdkrw:1380,changePct:0}),​​​​​​​​​​​​​​​​
+    return new Response(JSON.stringify({usdkrw:1380,changePct:0}),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}})
+  }
+}

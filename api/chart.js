@@ -1,7 +1,18 @@
 export default async function handler(req) {
-  const url = new URL(req.url)
-  const symbol = url.searchParams.get('symbol')
-  const range = url.searchParams.get('range') || '3mo'
-  const interval = url.searchParams.get('interval') || '1d'
+  const {searchParams} = new URL(req.url, 'https://example.com')
+  const symbol = searchParams.get('symbol')
+  const range = searchParams.get('range') || '3mo'
+  const interval = searchParams.get('interval') || '1d'
   try {
-    const r = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?range='+range+'&interval='+​​​​​​​​​​​​​​​​
+    const r = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?range='+range+'&interval='+interval,{headers:{'User-Agent':'Mozilla/5.0'}})
+    const d = await r.json()
+    const chart = d?.chart?.result?.[0]
+    if(!chart) throw new Error('No data')
+    const ts = chart.timestamp||[]
+    const q = chart.indicators?.quote?.[0]||{}
+    const candles = ts.map((t,i)=>({time:t,open:q.open?.[i],high:q.high?.[i],low:q.low?.[i],close:q.close?.[i]})).filter(c=>c.open&&c.close)
+    return new Response(JSON.stringify({candles,meta:chart.meta}),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}})
+  } catch(e) {
+    return new Response(JSON.stringify({error:e.message}),{status:500,headers:{'Content-Type':'application/json'}})
+  }
+}

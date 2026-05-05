@@ -1,6 +1,7 @@
 export default async function handler(req) {
   if(req.method !== 'POST') return new Response('Method not allowed',{status:405})
-  const {prompt} = await req.json()
+  const body = await req.text()
+  const {prompt} = JSON.parse(body)
   const KEY = process.env.GEMINI_API_KEY
   if(!KEY) return new Response(JSON.stringify({error:'No API key'}),{status:500,headers:{'Content-Type':'application/json'}})
   try {

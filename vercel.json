@@ -1,2 +1,11 @@
-{}
+{
+  "rewrites": [
+    { "source": "/api/quote", "destination": "/api-quote.js" },
+    { "source": "/api/fx", "destination": "/api-fx.js" },
+    { "source": "/api/chart", "destination": "/api-chart.js" },
+    { "source": "/api/earnings", "destination": "/api-earnings.js" },
+    { "source": "/api/gemini", "destination": "/api-gemini.js" }
+  ]
+}
+
 

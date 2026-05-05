@@ -1,6 +1,6 @@
 export default async function handler(req) {
-  const url = new URL(req.url)
-  const ticker = url.searchParams.get('ticker')
+  const {searchParams} = new URL(req.url, 'https://example.com')
+  const ticker = searchParams.get('ticker')
   if(!ticker) return new Response(JSON.stringify({error:'No ticker'}),{status:400,headers:{'Content-Type':'application/json'}})
   const KEY = process.env.FINNHUB_API_KEY
   try {

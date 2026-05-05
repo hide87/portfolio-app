@@ -6,10 +6,24 @@ export default async function handler(req, res) {
   await Promise.all(tickers.map(async (ticker) => {
     if(ticker.includes('.KS')||ticker.includes('.KQ')) {
       try {
-        const r = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?range=1d&interval=1d',{headers:{'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36','Accept':'application/json'}})
+        const r = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?range=5d&interval=1d',{headers:{'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36','Accept':'application/json'}})
         const d = await r.json()
-        const m = d?.chart?.result?.[0]?.meta
-        if(m?.regularMarketPrice) result[ticker]={price:m.regularMarketPrice,changePct:m.previousClose?(m.regularMarketPrice-m.previousClose)/m.previousClose*100:0,change:m.regularMarketPrice-(m.previousClose||m.regularMarketPrice),prevClose:m.previousClose,name:ticker}
+        const meta = d?.chart?.result?.[0]?.meta
+        const quotes = d?.chart?.result?.[0]?.indicators?.quote?.[0]
+        const closes = d?.chart?.result?.[0]?.timestamp
+        const closeArr = quotes?.close || []
+        const validCloses = closeArr.filter(v=>v!=null)
+        const currentPrice = meta?.regularMarketPrice || validCloses[validCloses.length-1]
+        const prevClose = validCloses.length>=2 ? validCloses[validCloses.length-2] : meta?.chartPreviousClose
+        if(currentPrice) {
+          result[ticker] = {
+            price: currentPrice,
+            changePct: prevClose ? (currentPrice-prevClose)/prevClose*100 : 0,
+            change: prevClose ? currentPrice-prevClose : 0,
+            prevClose: prevClose,
+            name: ticker
+          }
+        }
       } catch(e){}
     } else {
       try {
